@@ -22,7 +22,147 @@ from PIL import Image
 from os import system, path
 
 ################################################################################
+################################################################################
+###                           ENCODE TEXT IN IMAGE                           ###
+################################################################################
+################################################################################
+
+#### HARD CODED FOR TESTS
+def encode_text_in_image():
+    img = Image.open('tests/c.png').convert('RGB')
+    # img = get_img_from_path('ENTER PATH TO DECODED IMAGE: ')
+    width, height = img.size
+    max_chars = get_max_chars(img)
+    # message = get_message()
+    message = 'hello friend'
+    bit_index = -1
+    # bit_index = which_bit()
+    bin_text = text_to_binary(message)
+    # decoded_bin_text = binary_to_text(bin_text)
+    pixels = img.load()
+
+    # NEW IMAGE
+    '''
+    text_encoded_img = Image.new(mode = 'RGB', size = img.size, color = 0)
+    encoded_pixels = text_encoded_img.load()
+    '''
+    # Initialize pixel/coord counter
+    num = 0
+
+    # ENCODE
+    for bin_idx in range(len(bin_text)):
+        x, y = num_to_coord(num, width)
+        r,g,b = pixels[x,y]
+        # R
+        if bin_idx % 3 == 0:
+            r_val = pixels[x,y][0]
+            new_r_val = write_bit_to_color(r_val, bin_text[bin_idx], bit_index)
+            print(bin_idx, num, bin_text[bin_idx], r_val, new_r_val)
+            pixels[x,y]= (new_r_val, g, b)
+            print(pixels[x,y][0])
+
+        # G
+        elif bin_idx % 3 == 1:
+            g_val = pixels[x,y][1]
+            new_g_val = write_bit_to_color(g_val, bin_text[bin_idx], bit_index)
+            print(bin_idx, num, bin_text[bin_idx], g_val, new_g_val)
+            pixels[x,y] = (r, new_g_val, b)
+            print(pixels[x,y][1])
+        # B
+        elif bin_idx % 3 == 2:
+            b_val = pixels[x,y][2]
+            new_b_val = write_bit_to_color(b_val, bin_text[bin_idx], bit_index)
+            print(bin_idx, num, bin_text[bin_idx], b_val, new_b_val)
+            pixels[x,y] = (r, g, new_b_val)
+            print(pixels[x,y][2])
+            num += 1
+        else:
+            print('ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR')
+
+    # SAVE
+    encoded_img_name = input('ENTER PATH/NAME FOR ENCODED IMAGE OUTPUT: ')
+    img.save(encoded_img_name, format = 'png')
+
+
+# Takes COLOR VALUE (0-255) as INT, bit (0-1), as STRING, and index as int.
+# Returns INT with new color value, having replaced bit.
+def write_bit_to_color(color_val, bit, idx):
+    new_bin_color_val = list(format(color_val, '08b'))
+    new_bin_color_val[idx] = bit
+    new_color = int(''.join(new_bin_color_val), 2)
+
+    #print(color_val, bit, '\n\t',format(color_val, '08b'), '\n\t', format(new_color, '08b'), '\n', new_color)
+
+    return new_color
+
+def text_to_binary(text):
+    bin_text = ''.join(format(ord(i), '08b') for i in text)
+    return bin_text
+
+def get_max_chars(img):
+    width, height = img.size
+    total_bits = width * height * 3 #rgb
+    total_bytes = int(total_bits / 8)
+    return total_bytes
+
+def get_message():
+    message = input('MESSAGE TO ENCODE: ')
+    return message
+
+####################
+def check_img_size_vs_message_length(img, message):
+    width, height = img.size
+    pass
+
+################################################################################
+###                           IMAGE/MATRIX LOOPING                           ###
+################################################################################
+
+def coord_to_num(x, y, width):
+    num = x + y * width
+    return num    
+
+def num_to_coord(num, width):
+    x = num % width
+    y = int(num / width)
+    return x, y
+
+################################################################################
+###                           DECODE TEXT IN IMAGE                           ###
+################################################################################
+
+def binary_to_text(bin_text):
+    decoded_text = ''.join(chr(int(bin_text[i:i+8], 2)) for i in range(0, len(bin_text), 8))
+    return decoded_text
+
+################################################################################
+###                              TEXT IN IMAGE                               ###
+###                                  SHARED                                  ###
+################################################################################
+
+def which_bit():
+    bit = input('Which bit to encode the message in LSB 0 - MSB 7 (0 recommended)? ')
+    if bit.isdigit():
+        bit = int(bit)
+        if 0 <= bit <= 7:
+            bit_index = - bit - 1
+            return bit_index
+        else:
+            print('PLEASE ENTER A NUMBER BETWEEN 1 AND 4')
+            bit = which_bit()
+            bit_index = - bit - 1
+            return bit_index
+    else:
+        print('PLEASE ENTER A NUMBER BETWEEN 1 AND 4')
+        bit = which_bit()
+        bit_index = - bit - 1
+        return bit_index
+
+################################################################################
+################################################################################
 ###                                  ENCODE                                  ###
+###                              IMAGE IN IMAGE                              ###
+################################################################################
 ################################################################################
 
 def encode_img():
@@ -91,16 +231,7 @@ def get_imgs_to_encode():
     img_top = get_img_from_path('ENTER PATH TO TOP IMAGE: ')
     img_under = get_img_from_path('ENTER PATH TO IMAGE TO HIDE: ')
 
-    # get number of SIGNIFICANT BITS
-    # n_SB = n_SB_check()
-    # n_SB = 2
-
     if img_size_check(img_top, img_under):
-        # RGB convert
-        img_top.convert('RGB')
-        img_under.convert('RGB')
-        # ENCODE
-        #encode(img_top, img_under, n_SB)
         return img_top, img_under
 
 def img_size_check(img_top, img_under):
@@ -122,6 +253,7 @@ def get_img_from_path(question):
     elif path.exists(img_path):
         try:
             img = Image.open(img_path)
+            img = img.convert('RGB')
             return img
         except:
             print(img_path, 'IS NOT AN IMAGE OR VALID IMAGE FORMAT.')
@@ -129,6 +261,7 @@ def get_img_from_path(question):
     else:
         print("PATH DOESN'T EXIST")
         img = get_img_from_path(question)
+        img = img.convert('RGB')
         return img
 
 def get_n_SB():
@@ -147,7 +280,10 @@ def get_n_SB():
         return n_SB
 
 ################################################################################
+################################################################################
 ###                                  DECODE                                  ###
+###                              IMAGE IN IMAGE                              ###
+################################################################################
 ################################################################################
 
 def decode_img():
@@ -195,7 +331,9 @@ def get_encoded_img():
     return encoded_img
 
 ################################################################################
+################################################################################
 ###                                   MENUS                                  ###
+################################################################################
 ################################################################################
 
 def main_menu():
@@ -215,7 +353,6 @@ def main_menu():
     if option == 1:
         encode_menu('opt')
     if option == 2:
-        print('foo')
         decode_menu('opt')
 
 
@@ -243,7 +380,7 @@ def encode_menu(encode_opt):
 
         # -2- TEXT IN IMAGE
         elif encode_opt == 2:
-            pass
+            encode_text_in_image()
 
 # DECODE MENU
 def decode_menu(decode_opt):
@@ -295,7 +432,9 @@ def clear():
     _ = system('clear')
 
 ################################################################################
+################################################################################
 ###                                   MAIN                                   ###
+################################################################################
 ################################################################################
 
 def main():
