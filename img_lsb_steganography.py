@@ -4,15 +4,16 @@
 ###                                  NOTES                                   ###
 ################################################################################
 
-# COMMIT_TEST
+# EXPLANATION GOES HERE
 
 ################################################################################
 ###                                   TODO                                   ###
 ################################################################################
 
-# decode_menu()
 # main menu
-# encode string
+# encode string 
+# checks
+# decode string
 
 ################################################################################
 ###                                  IMPORT                                  ###
@@ -27,25 +28,24 @@ from os import system, path
 ################################################################################
 ################################################################################
 
-#### HARD CODED FOR TESTS
 def encode_text_in_image():
-    img = Image.open('tests/c.png').convert('RGB')
-    # img = get_img_from_path('ENTER PATH TO DECODED IMAGE: ')
+    print("------------------------------------------")
+    print("           ENCODE TEXT IN IMAGE           ")
+    print("------------------------------------------")
+
+    img = get_img_from_path('ENTER PATH TO IMAGE TO ENCODE TEXT IN: ')
     width, height = img.size
-    max_chars = get_max_chars(img)
-    # message = get_message()
-    message = 'hello friend'
-    bit_index = -1
-    # bit_index = which_bit()
+    
+    message = get_message()
+
+    max_x, max_y, max_num = check_max_chars(width, height, message)
+    start_x, start_y = get_start_coordinates(max_x, max_y, max_num, width, height)
+
+    bit_index = which_bit()
     bin_text = text_to_binary(message)
-    # decoded_bin_text = binary_to_text(bin_text)
+
     pixels = img.load()
 
-    # NEW IMAGE
-    '''
-    text_encoded_img = Image.new(mode = 'RGB', size = img.size, color = 0)
-    encoded_pixels = text_encoded_img.load()
-    '''
     # Initialize pixel/coord counter
     num = 0
 
@@ -82,6 +82,8 @@ def encode_text_in_image():
     # SAVE
     encoded_img_name = input('ENTER PATH/NAME FOR ENCODED IMAGE OUTPUT: ')
     img.save(encoded_img_name, format = 'png')
+    print('IMAGE SAVED AS:', encoded_img_name)
+    input('Press enter to continue.')
 
 
 # Takes COLOR VALUE (0-255) as INT, bit (0-1), as STRING, and index as int.
@@ -91,44 +93,93 @@ def write_bit_to_color(color_val, bit, idx):
     new_bin_color_val[idx] = bit
     new_color = int(''.join(new_bin_color_val), 2)
 
-    #print(color_val, bit, '\n\t',format(color_val, '08b'), '\n\t', format(new_color, '08b'), '\n', new_color)
-
     return new_color
 
 def text_to_binary(text):
     bin_text = ''.join(format(ord(i), '08b') for i in text)
     return bin_text
 
-def get_max_chars(img):
-    width, height = img.size
-    total_bits = width * height * 3 #rgb
-    total_bytes = int(total_bits / 8)
-    return total_bytes
+# Checks the image is large enough to fit the message
+# Returns MAX COORDINATES for message to start at.
+def check_max_chars(width, height, msg):
 
+    msg_bin_length = len(msg) * 8
+    total_pixels = width * height
+    pixels_needed = int(msg_bin_length / 3) + 1
+
+    # Check if there are enough pixels to FIT the message
+    if total_pixels >= pixels_needed:
+        # Calculate MAX COORDS
+        last_starting_pixel = total_pixels - pixels_needed
+        max_x, max_y = num_to_coord(last_starting_pixel, width)
+        max_num = coord_to_num(max_x, max_y, width)
+
+        # print('msg len', msg_bin_length, 'total px', total_pixels, 'px needed', pixels_needed)
+        # print('last:', last_starting_pixel, 'x', max_x, 'y', max_y)
+        # print('max num:', max_num)
+
+        return max_x, max_y, max_num
+
+    else:
+        print("THE IMAGE ISN'T LARGE ENOUGH TO FIT THE MESSAGE")
+        quit_fn()
+
+# Gets START COORDINATES for pixel to start encoding message.
+# Returns 2 INTs: X, Y coordinates
+def get_start_coordinates(max_x, max_y, max_num, width, height):
+    print('')
+    print('ENTER X AND Y COORDINATES FOR THE START OF THE MESSAGE')
+    print('X = 0, Y = 0, IS THE TOP LEFT PIXEL WIDTH = ', (width -1), 'HEIGHT =', (height -1))
+    print('X =', max_x, 'Y =', max_y, 'IS THE MAX COORDINATE TO FIT THE MESSAGE')
+    x = input('X = ')
+    y = input('Y = ')
+    
+    if x.isdigit() and y.isdigit():
+        x = int(x)
+        y = int(y)
+        start_num = coord_to_num(x, y, width)
+        
+        if start_num <= max_num and x <= (width-1):
+            return x,y
+        
+        else:
+            print('\nINVALID COORDINATE. ENTER COORD BETWEEN: [0,0] - [%d,%d]' % (max_x, max_y))
+            x, y = get_start_coordinates(max_x, max_y, max_num, width, height)
+            return x, y
+
+        
+    else:
+        print('\nINVALID COORDINATE. ENTER COORD BETWEEN: [0,0] - [%d,%d]' % (max_x, max_y))
+        x, y = get_start_coordinates(max_x, max_y, max_num, width, height)
+        return x, y
+
+# Gets USER INPUT message to encode. Returns MESSAGE as STR
 def get_message():
     message = input('MESSAGE TO ENCODE: ')
     return message
 
-####################
-def check_img_size_vs_message_length(img, message):
-    width, height = img.size
-    pass
 
 ################################################################################
 ###                           IMAGE/MATRIX LOOPING                           ###
 ################################################################################
 
+# Takes X, Y coordinates as INTs, and image WIDTH as INT
+# Returns INT corresponding to pixel number of coordinates
 def coord_to_num(x, y, width):
     num = x + y * width
     return num    
 
+# Takes INT of pixel number (^see funcion above^), and image WIDTH as INT
+# Returns X, Y coordinates as 2 INTs.
 def num_to_coord(num, width):
     x = num % width
     y = int(num / width)
     return x, y
 
 ################################################################################
+################################################################################
 ###                           DECODE TEXT IN IMAGE                           ###
+################################################################################
 ################################################################################
 
 def binary_to_text(bin_text):
@@ -148,12 +199,12 @@ def which_bit():
             bit_index = - bit - 1
             return bit_index
         else:
-            print('PLEASE ENTER A NUMBER BETWEEN 1 AND 4')
+            print('PLEASE ENTER A NUMBER BETWEEN 0 AND 7')
             bit = which_bit()
             bit_index = - bit - 1
             return bit_index
     else:
-        print('PLEASE ENTER A NUMBER BETWEEN 1 AND 4')
+        print('PLEASE ENTER A NUMBER BETWEEN 0 AND 7')
         bit = which_bit()
         bit_index = - bit - 1
         return bit_index
@@ -165,7 +216,10 @@ def which_bit():
 ################################################################################
 ################################################################################
 
-def encode_img():
+def encode_img_in_img():
+    print("------------------------------------------")
+    print("          ENCODE IMAGE IN IMAGE           ")
+    print("------------------------------------------")
     # get IMGs
     img_top, img_under =  get_imgs_to_encode()
 
@@ -227,6 +281,8 @@ def remove_LSBs(val, n_SB):
     # print(val, b_val, shifted_val, shifted_b_val)
     return shifted_b_val
 
+# Gets USER INPUT for 2 images. Checks path and if they're the same size.
+# Returns 2 IMAGE objects
 def get_imgs_to_encode():    
     img_top = get_img_from_path('ENTER PATH TO TOP IMAGE: ')
     img_under = get_img_from_path('ENTER PATH TO IMAGE TO HIDE: ')
@@ -234,6 +290,7 @@ def get_imgs_to_encode():
     if img_size_check(img_top, img_under):
         return img_top, img_under
 
+# Returns TRUE if images are the same size.
 def img_size_check(img_top, img_under):
     if img_top.size == img_under.size:
         return True
@@ -264,6 +321,7 @@ def get_img_from_path(question):
         img = img.convert('RGB')
         return img
 
+
 def get_n_SB():
     n_SB = input('How many bits to encode/decode? 1 - 4 (2 recommended)? ')
     if n_SB.isdigit():
@@ -287,6 +345,9 @@ def get_n_SB():
 ################################################################################
 
 def decode_img():
+    print("------------------------------------------")
+    print("           DECODE IMAGE IN IMAGE          ")
+    print("------------------------------------------")
     encoded_img = get_img_from_path('ENTER PATH TO ENCODED IMAGE (TO DECODE): ')
     encoded_pixels = encoded_img.load()    
     width, height = encoded_img.size
@@ -376,7 +437,7 @@ def encode_menu(encode_opt):
         encode_opt = check_option(encode_opt, encode_opt_list)
         # -1- IMAGE IN IMAGE
         if encode_opt == 1:
-            encode_img()
+            encode_img_in_img()
 
         # -2- TEXT IN IMAGE
         elif encode_opt == 2:
@@ -443,8 +504,17 @@ def main():
 if __name__ == '__main__':
     main()
 
+    #check_max_chars(5,10,'hello friendly friend')
+    '''
+    max_num = coord_to_num(5,0,10)
+    max_XY = num_to_coord(5,10)
+    print(max_num)
+    print(max_XY)
+    x, y = get_start_coordinates(5, 0, max_num, 10, 1)
+    print(x,y)
+    ''' 
 ################################################################################
 ###                                 END NOTES                                ###
 ################################################################################
 
-# 2/1/21 19:29
+# 2/8/2021
