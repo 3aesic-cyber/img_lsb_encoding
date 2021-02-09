@@ -10,10 +10,8 @@
 ###                                   TODO                                   ###
 ################################################################################
 
-# main menu
-# encode string 
-# checks
-# decode string
+# NOT STARTING AT SPECIFIED PIXEL
+# WRITE TEXT OUTPUT TO FILE
 
 ################################################################################
 ###                                  IMPORT                                  ###
@@ -41,7 +39,7 @@ def encode_text_in_image():
     max_x, max_y, max_num = check_max_chars(width, height, message)
     start_x, start_y = get_start_coordinates(max_x, max_y, max_num, width, height)
 
-    bit_index = which_bit()
+    bit_index = which_bit('Which bit to encode the message in LSB 0 - MSB 7 (0 recommended)? ')
     bin_text = text_to_binary(message)
 
     pixels = img.load()
@@ -160,7 +158,7 @@ def get_message():
 
 
 ################################################################################
-###                           IMAGE/MATRIX LOOPING                           ###
+###                          IMAGE/MATRIX COORDINATES                        ###
 ################################################################################
 
 # Takes X, Y coordinates as INTs, and image WIDTH as INT
@@ -182,6 +180,40 @@ def num_to_coord(num, width):
 ################################################################################
 ################################################################################
 
+def decode_text_in_img():
+    print("------------------------------------------")
+    print("           DECODE IMAGE IN IMAGE          ")
+    print("------------------------------------------")
+
+    encoded_img = get_img_from_path('ENTER PATH TO ENCODED IMAGE (TO DECODE): ')
+    encoded_pixels = encoded_img.load()    
+    width, height = encoded_img.size
+
+    bit_index = which_bit('Which bit to decode? LSB 0 - MSB 7 (0 recommended) ')
+    
+    bin_string = ''
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b = encoded_pixels[x,y]
+            for val in [r,g,b]:
+                bin_val = format(val, '08b')
+                bin_string += bin_val[bit_index]
+
+    decoded_text = binary_to_text(bin_string)
+    print(bin_string)
+    print()
+    print(decoded_text)
+    input('stop')
+    # Loop through pixels
+    # get rgb values
+    # turn each into binary
+    # += bit_index to a string
+    # \n at end of row
+
+
+    pass
+
 def binary_to_text(bin_text):
     decoded_text = ''.join(chr(int(bin_text[i:i+8], 2)) for i in range(0, len(bin_text), 8))
     return decoded_text
@@ -191,8 +223,8 @@ def binary_to_text(bin_text):
 ###                                  SHARED                                  ###
 ################################################################################
 
-def which_bit():
-    bit = input('Which bit to encode the message in LSB 0 - MSB 7 (0 recommended)? ')
+def which_bit(question):
+    bit = input(question)
     if bit.isdigit():
         bit = int(bit)
         if 0 <= bit <= 7:
@@ -302,6 +334,9 @@ def img_size_check(img_top, img_under):
 ###                                  SHARED                                  ###
 ################################################################################
 
+# Takes a STR, displayed as a question to the user, and gets a path to an image file
+# Checks that the path is correct and that it's a valid image object.
+# Returns an IMAGE OBJECT.
 def get_img_from_path(question):
     print('ENTER "q" TO QUIT OR')
     img_path = input(question)
@@ -344,7 +379,7 @@ def get_n_SB():
 ################################################################################
 ################################################################################
 
-def decode_img():
+def decode_img_in_img():
     print("------------------------------------------")
     print("           DECODE IMAGE IN IMAGE          ")
     print("------------------------------------------")
@@ -463,11 +498,11 @@ def decode_menu(decode_opt):
         decode_opt = check_option(decode_opt, decode_opt_list)
         # -1- IMAGE IN IMAGE
         if decode_opt == 1:
-            decode_img()
+            decode_img_in_img()
 
         # -2- TEXT IN IMAGE
-        elif encode_opt == 2:
-            pass
+        elif decode_opt == 2:
+            decode_text_in_img()
 
 def check_option(opt, opt_list):
     if opt.lower() == "q":
