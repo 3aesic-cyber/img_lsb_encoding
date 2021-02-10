@@ -10,8 +10,9 @@
 ###                                   TODO                                   ###
 ################################################################################
 
-# NOT STARTING AT SPECIFIED PIXEL
-# WRITE TEXT OUTPUT TO FILE
+# Clean up file
+# Improve interface
+# test different scenarios (bits, sizes, stack IMG and TXT in a single image)
 
 ################################################################################
 ###                                  IMPORT                                  ###
@@ -38,6 +39,7 @@ def encode_text_in_image():
 
     max_x, max_y, max_num = check_max_chars(width, height, message)
     start_x, start_y = get_start_coordinates(max_x, max_y, max_num, width, height)
+    start_num = coord_to_num(start_x, start_y, width)
 
     bit_index = which_bit('Which bit to encode the message in LSB 0 - MSB 7 (0 recommended)? ')
     bin_text = text_to_binary(message)
@@ -45,7 +47,10 @@ def encode_text_in_image():
     pixels = img.load()
 
     # Initialize pixel/coord counter
-    num = 0
+    num = start_num
+    # make multiple of 8, so bytes align with decoder
+    remainder = num % 8
+    num = num - remainder
 
     # ENCODE
     for bin_idx in range(len(bin_text)):
@@ -55,24 +60,24 @@ def encode_text_in_image():
         if bin_idx % 3 == 0:
             r_val = pixels[x,y][0]
             new_r_val = write_bit_to_color(r_val, bin_text[bin_idx], bit_index)
-            print(bin_idx, num, bin_text[bin_idx], r_val, new_r_val)
+            #print(bin_idx, num, bin_text[bin_idx], r_val, new_r_val)
             pixels[x,y]= (new_r_val, g, b)
-            print(pixels[x,y][0])
+            #print(pixels[x,y][0])
 
         # G
         elif bin_idx % 3 == 1:
             g_val = pixels[x,y][1]
             new_g_val = write_bit_to_color(g_val, bin_text[bin_idx], bit_index)
-            print(bin_idx, num, bin_text[bin_idx], g_val, new_g_val)
+            #print(bin_idx, num, bin_text[bin_idx], g_val, new_g_val)
             pixels[x,y] = (r, new_g_val, b)
-            print(pixels[x,y][1])
+            #print(pixels[x,y][1])
         # B
         elif bin_idx % 3 == 2:
             b_val = pixels[x,y][2]
             new_b_val = write_bit_to_color(b_val, bin_text[bin_idx], bit_index)
-            print(bin_idx, num, bin_text[bin_idx], b_val, new_b_val)
+            #print(bin_idx, num, bin_text[bin_idx], b_val, new_b_val)
             pixels[x,y] = (r, g, new_b_val)
-            print(pixels[x,y][2])
+            #print(pixels[x,y][2])
             num += 1
         else:
             print('ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR-ERROR')
@@ -123,7 +128,7 @@ def check_max_chars(width, height, msg):
         quit_fn()
 
 # Gets START COORDINATES for pixel to start encoding message.
-# Returns 2 INTs: X, Y coordinates
+# Returns 3 INTs: X, Y coordinates
 def get_start_coordinates(max_x, max_y, max_num, width, height):
     print('')
     print('ENTER X AND Y COORDINATES FOR THE START OF THE MESSAGE')
@@ -138,7 +143,7 @@ def get_start_coordinates(max_x, max_y, max_num, width, height):
         start_num = coord_to_num(x, y, width)
         
         if start_num <= max_num and x <= (width-1):
-            return x,y
+            return x, y
         
         else:
             print('\nINVALID COORDINATE. ENTER COORD BETWEEN: [0,0] - [%d,%d]' % (max_x, max_y))
@@ -164,8 +169,14 @@ def get_message():
 # Takes X, Y coordinates as INTs, and image WIDTH as INT
 # Returns INT corresponding to pixel number of coordinates
 def coord_to_num(x, y, width):
+    if x < 0:
+        x = 0
+    elif x >= (width):
+        x = width - 1
+
     num = x + y * width
-    return num    
+    return num
+
 
 # Takes INT of pixel number (^see funcion above^), and image WIDTH as INT
 # Returns X, Y coordinates as 2 INTs.
@@ -201,19 +212,18 @@ def decode_text_in_img():
                 bin_string += bin_val[bit_index]
 
     decoded_text = binary_to_text(bin_string)
-    print(bin_string)
+    # print(bin_string)
     print()
     print(decoded_text)
-    input('stop')
-    # Loop through pixels
-    # get rgb values
-    # turn each into binary
-    # += bit_index to a string
-    # \n at end of row
+    print()
+    # Save text fil
+    out_file = input('ENTER PATH/NAME FOR DECODED TEXT OUTPUT: ')
+    with open(out_file, 'w') as f:
+        f.write(decoded_text)
+    print('TEXT FILE SAVED AS:', out_file)
+    input('Press enter to continue.')
 
-
-    pass
-
+# Tales a string of binary characters. Returns a string of ASCII characters.
 def binary_to_text(bin_text):
     decoded_text = ''.join(chr(int(bin_text[i:i+8], 2)) for i in range(0, len(bin_text), 8))
     return decoded_text
@@ -539,17 +549,9 @@ def main():
 if __name__ == '__main__':
     main()
 
-    #check_max_chars(5,10,'hello friendly friend')
-    '''
-    max_num = coord_to_num(5,0,10)
-    max_XY = num_to_coord(5,10)
-    print(max_num)
-    print(max_XY)
-    x, y = get_start_coordinates(5, 0, max_num, 10, 1)
-    print(x,y)
-    ''' 
 ################################################################################
 ###                                 END NOTES                                ###
 ################################################################################
 
-# 2/8/2021
+# all working!
+# 2/9/2021
