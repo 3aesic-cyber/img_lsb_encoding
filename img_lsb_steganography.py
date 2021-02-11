@@ -225,7 +225,14 @@ def decode_text_in_img():
 
 # Tales a string of binary characters. Returns a string of ASCII characters.
 def binary_to_text(bin_text):
-    decoded_text = ''.join(chr(int(bin_text[i:i+8], 2)) for i in range(0, len(bin_text), 8))
+    # decoded_text = ''.join(chr(int(bin_text[i:i+8], 2)) for i in range(0, len(bin_text), 8))
+    decoded_text = ''
+    for i in range(0,len(bin_text),8):
+        byte = bin_text[i:i+8]
+        num = int(byte, 2)
+        if 32 <= num <= 126:
+            char = chr(num)
+            decoded_text += char
     return decoded_text
 
 ################################################################################
